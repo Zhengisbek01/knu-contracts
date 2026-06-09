@@ -404,7 +404,7 @@ export default function App() {
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))", gap:13, marginBottom:22 }}>
                 <KpiCard accent icon="📈" label="Доход с НДС" value={totalIncVat>0?fmt(totalIncVat):"—"} sub={totalIncNet>0?`Без НДС: ${fmt(totalIncNet)}`:`${incomeData.length} договоров`} sub2={totalIncVat>0?`НДС: ${fmt(totalIncVat-totalIncNet)}`:undefined}/>
-                <KpiCard icon="📉" label="Расход с НДС" value={totalExpVat>0?fmt(totalExpVat):"—"} sub={`${allExp.length} записей`}/>
+                <KpiCard icon="📉" label="Расход с НДС" value={totalExpVat>0?fmt(totalExpVat):"—"} sub={`${allExpF.length} записей`}/>
                 <KpiCard icon="💰" label="Прибыль" value={totalIncVat>0||totalExpVat>0?fmt(profit):"—"} sub={profit>=0?"Положительный баланс":"Дефицит"}/>
                 <KpiCard icon="👥" label="Пользователей" value={users.length} sub={`${users.filter(u=>u.role==="manager").length} менеджеров`}/>
               </div>
@@ -415,7 +415,7 @@ export default function App() {
                   ))}
                 </InfoCard>
                 <InfoCard title="Последние расходы">
-                  {allExp.length===0?<Empty text="Нет данных"/>:allExp.slice(-4).reverse().map(r=>(
+                  {allExpF.length===0?<Empty text="Нет данных"/>:allExpF.slice(-4).reverse().map(r=>(
                     <DRow key={r.id} top={r.person||r.company} bot={`${r.month} ${r.year} · ${r.addedBy||""}`} vat={r.amountWithVat} net={r.amountNet} status={r.status} red/>
                   ))}
                 </InfoCard>
@@ -451,8 +451,8 @@ export default function App() {
                   <div style={{ color:C.slate, fontSize:12, marginTop:6 }}>Менеджеры должны добавить договора</div>
                 </div>
               ):(<ReportCharts
-                  incomeData={allIncF} expenseData={expenseData.filter(catFilter)}
-                  gphData={gphData.filter(catFilter)}
+                  incomeData={allIncF} expenseData={expenseData.filter(cf)}
+                  gphData={gphData.filter(cf)}
                   chartMonthly={chartMonthly} chartPie={chartPie} chartProfit={chartProfit}
                   reportYear={reportYear}
                 />
