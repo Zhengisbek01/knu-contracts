@@ -284,23 +284,33 @@ export default function App() {
   const fExpense = expenseData.filter(catFilter).filter(r=>filterYear==="all"||r.year===+filterYear);
   const fGph     = gphData.filter(catFilter).filter(r=>filterYear==="all"||r.year===+filterYear);
 
-  const chartMonthly = useMemo(()=>MONTHS.map(m=>({
-    month:m.slice(0,3),
-    "Доходы": allIncF.filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0),
-    "Расходы":allExp.filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0),
-  })),[allIncF,allExp,reportYear]);
+  const chartMonthly = useMemo(()=>{
+    const dept = currentUser.department || role.category || null;
+    const cf = r => dept ? r.category===dept : true;
+    return MONTHS.map(m=>({
+      month:m.slice(0,3),
+      "Доходы":  incomeData.filter(cf).filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0),
+      "Расходы": [...expenseData,...gphData].filter(cf).filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0),
+    }));
+  },[incomeData,expenseData,gphData,reportYear,currentUser.department,role.category]);
 
   const chartPie = useMemo(()=>{
-    const t=expenseData.filter(catFilter).filter(r=>r.year===reportYear).reduce((s,r)=>s+r.amountWithVat,0);
-    const g=gphData.filter(catFilter).filter(r=>r.year===reportYear).reduce((s,r)=>s+r.amountWithVat,0);
+    const dept = currentUser.department || role.category || null;
+    const cf = r => dept ? r.category===dept : true;
+    const t=expenseData.filter(cf).filter(r=>r.year===reportYear).reduce((s,r)=>s+r.amountWithVat,0);
+    const g=gphData.filter(cf).filter(r=>r.year===reportYear).reduce((s,r)=>s+r.amountWithVat,0);
     return [{name:"Тендерные",value:t},{name:"ГПХ",value:g}];
-  },[expenseData,gphData,reportYear,currentUser]);
+  },[expenseData,gphData,reportYear,currentUser.department,role.category]);
 
-  const chartProfit = useMemo(()=>MONTHS.map(m=>{
-    const i=allIncF.filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0);
-    const e=allExp.filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0);
-    return {month:m.slice(0,3),"Прибыль":i-e};
-  }),[allIncF,allExp,reportYear]);
+  const chartProfit = useMemo(()=>{
+    const dept = currentUser.department || role.category || null;
+    const cf = r => dept ? r.category===dept : true;
+    return MONTHS.map(m=>{
+      const i=incomeData.filter(cf).filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0);
+      const e=[...expenseData,...gphData].filter(cf).filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0);
+      return {month:m.slice(0,3),"Прибыль":i-e};
+    });
+  },[incomeData,expenseData,gphData,reportYear,currentUser.department,role.category]);
 
   const saveRecord=(type,item)=>{
     const cat = currentUser.department || role.category || "general";
