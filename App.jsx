@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const C = {
@@ -270,47 +270,38 @@ export default function App() {
   const canDel   = role.canDelete;
   const tabs     = TABS_ALL.filter(t => role.canView.includes(t.id));
 
-  // категорийный фильтр: начальник отдела видит свой отдел, менеджер видит свой отдел
+  // категорийный фильтр
   const userDept = currentUser.department || role.category || null;
-  const catFilter = r => userDept ? r.category === userDept : true;
-  const allIncF   = incomeData.filter(catFilter);
-  const allExp    = [...expenseData,...gphData].filter(catFilter);
+  const cf = r => userDept ? r.category === userDept : true;
+
+  const allIncF     = incomeData.filter(cf);
+  const allExpF     = [...expenseData,...gphData].filter(cf);
   const totalIncVat = allIncF.reduce((s,r)=>s+r.amountWithVat,0);
   const totalIncNet = allIncF.reduce((s,r)=>s+r.amountNet,0);
-  const totalExpVat = allExp.reduce((s,r)=>s+r.amountWithVat,0);
+  const totalExpVat = allExpF.reduce((s,r)=>s+r.amountWithVat,0);
   const profit      = totalIncVat - totalExpVat;
 
   const fIncome  = allIncF.filter(r=>filterYear==="all"||r.year===+filterYear);
-  const fExpense = expenseData.filter(catFilter).filter(r=>filterYear==="all"||r.year===+filterYear);
-  const fGph     = gphData.filter(catFilter).filter(r=>filterYear==="all"||r.year===+filterYear);
+  const fExpense = expenseData.filter(cf).filter(r=>filterYear==="all"||r.year===+filterYear);
+  const fGph     = gphData.filter(cf).filter(r=>filterYear==="all"||r.year===+filterYear);
 
-  const chartMonthly = useMemo(()=>{
-    const dept = currentUser.department || role.category || null;
-    const cf = r => dept ? r.category===dept : true;
-    return MONTHS.map(m=>({
-      month:m.slice(0,3),
-      "Доходы":  incomeData.filter(cf).filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0),
-      "Расходы": [...expenseData,...gphData].filter(cf).filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0),
-    }));
-  },[incomeData,expenseData,gphData,reportYear,currentUser.department,role.category]);
+  const chartMonthly = MONTHS.map(m=>({
+    month:m.slice(0,3),
+    "Доходы":  allIncF.filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0),
+    "Расходы": allExpF.filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0),
+  }));
 
-  const chartPie = useMemo(()=>{
-    const dept = currentUser.department || role.category || null;
-    const cf = r => dept ? r.category===dept : true;
+  const chartPie = (()=>{
     const t=expenseData.filter(cf).filter(r=>r.year===reportYear).reduce((s,r)=>s+r.amountWithVat,0);
     const g=gphData.filter(cf).filter(r=>r.year===reportYear).reduce((s,r)=>s+r.amountWithVat,0);
     return [{name:"Тендерные",value:t},{name:"ГПХ",value:g}];
-  },[expenseData,gphData,reportYear,currentUser.department,role.category]);
+  })();
 
-  const chartProfit = useMemo(()=>{
-    const dept = currentUser.department || role.category || null;
-    const cf = r => dept ? r.category===dept : true;
-    return MONTHS.map(m=>{
-      const i=incomeData.filter(cf).filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0);
-      const e=[...expenseData,...gphData].filter(cf).filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0);
-      return {month:m.slice(0,3),"Прибыль":i-e};
-    });
-  },[incomeData,expenseData,gphData,reportYear,currentUser.department,role.category]);
+  const chartProfit = MONTHS.map(m=>{
+    const i=allIncF.filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0);
+    const e=allExpF.filter(r=>r.year===reportYear&&r.month===m).reduce((s,r)=>s+r.amountWithVat,0);
+    return {month:m.slice(0,3),"Прибыль":i-e};
+  });
 
   const saveRecord=(type,item)=>{
     const cat = currentUser.department || role.category || "general";
